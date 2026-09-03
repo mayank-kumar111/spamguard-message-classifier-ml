@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}About - SpamGuard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <div class="section-eyebrow">// methodology</div>
+        <h1 class="page-title">Under the hood</h1>
+        <p class="page-subtitle">How SpamGuard is built, trained and evaluated.</p>
+    </div>
+</section>
+
+<section class="container section-pad pt-3">
+
+    <!-- Metrics table -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-table text-cyan"></i>Model performance</h4>
+        <p class="chart-note">All four models trained on identical TF-IDF features, evaluated on the same held-out {{ "{:,}".format(metrics.dataset.test_size) }}-message test set. Bars scale each score between 80–100%.</p>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle metrics-table mb-0">
+                <thead>
+                    <tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>ROC-AUC</th><th>Train</th></tr>
+                </thead>
+                <tbody>
+                    {% for name, m in metrics.models.items() %}
+                    <tr class="{{ 'best-row' if name == best_model }}">
+                        <td class="fw-semibold">{{ name }}{% if name == best_model %} <span class="chip chip-ham ms-1">BEST</span>{% endif %}</td>
+                        {% for val in [m.accuracy, m.precision, m.recall, m.f1, m.roc_auc] %}
+                        <td class="bar-cell"><span class="barfill" style="width: {{ ((val - 0.8) / 0.2 * 100)|round(1) }}%;"></span><span>{{ "%.4f"|format(val) }}</span></td>
+                        {% endfor %}
+                        <td class="mono">{{ m.train_time }}s</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="chart-note mt-3 mb-0"><strong>Precision</strong>: of messages flagged spam, how many truly were. <strong>Recall</strong>: of all real spam, how much was caught. <strong>F1</strong>: harmonic mean of the two, and what we pick the model on, since it balances catching spam against wrongly flagging good mail.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- TF-IDF -->
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-grid-3x3-gap text-cyan"></i>What is TF-IDF?</h4>
+                <p><strong>TF-IDF</strong> (Term Frequency – Inverse Document Frequency) converts text into numbers a model can learn from. Each word's weight combines:</p>
+                <ul class="text-dim">
+                    <li><strong>Term Frequency</strong>: how often the word appears in <em>this</em> message.</li>
+                    <li><strong>Inverse Document Frequency</strong>: how rare it is across <em>all</em> messages, so ubiquitous words like "the" are down-weighted and distinctive words like "prize" are boosted.</li>
+                </ul>
+                <p class="mb-2">Each message becomes a {{ "{:,}".format(metrics.vectorizer.vocab_size) }}-dimensional vector over unigrams and bigrams {{ metrics.vectorizer.ngram_range }}. We also benchmarked a raw-count <strong>CountVectorizer</strong>:</p>
+                <div class="table-responsive">
+                    <table class="table table-sm text-center mb-0">
+                        <thead><tr><th class="text-start">Model · F1</th><th>TF-IDF</th><th>Count</th></tr></thead>
+                        <tbody>
+                        {% for name in metrics.models.keys() %}
+                            <tr>
+                                <td class="text-start">{{ name }}</td>
+                                <td class="mono">{{ "%.4f"|format(metrics.vectorizer_comparison.tfidf[name]) }}</td>
+                                <td class="mono">{{ "%.4f"|format(metrics.vectorizer_comparison.count[name]) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Algorithm -->
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-cpu-fill text-cyan"></i>Why {{ best_model }}?</h4>
+                <p>A <strong>Linear Support Vector Machine</strong> finds the hyperplane that best separates spam from ham in the high-dimensional TF-IDF space, maximising the margin between classes. It's ideal for text because:</p>
+                <ul class="text-dim">
+                    <li>It thrives in <strong>high-dimensional, sparse</strong> feature spaces, which is exactly what bag-of-words produces.</li>
+                    <li>It's <strong>fast to train</strong> and resistant to overfitting.</li>
+                    <li>Its linear weights are <strong>interpretable</strong>, so we read them directly to surface the trigger tokens behind every prediction.</li>
+                </ul>
+                <p class="mb-0">Since a raw SVM only outputs a decision score, we wrap it in <strong>probability calibration</strong> so the app can report a meaningful confidence percentage.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preprocessing -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-funnel-fill text-cyan"></i>Preprocessing pipeline</h4>
+        <p class="chart-note">Every message, in training and at prediction, passes through this same pipeline (<code>preprocessing.py</code>).</p>
+        <div class="row g-3">
+            {% for step in metrics.preprocessing_steps %}
+            <div class="col-md-6">
+                <div class="step-item"><span class="step-num">{{ loop.index }}</span><span>{{ step }}</span></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Learned tokens -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-lightbulb-fill text-cyan"></i>What the model learned</h4>
+        <p class="chart-note">The strongest spam and ham signals by model weight (stemmed; placeholders like <code>phonenumbr</code> represent masked entities).</p>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6 class="text-spam mono mb-2">// most spammy</h6>
+                <div class="d-flex flex-wrap gap-2">{% for t in metrics.top_spam_tokens %}<span class="chip chip-spam">{{ t }}</span>{% endfor %}</div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-ham mono mb-2">// most hammy</h6>
+                <div class="d-flex flex-wrap gap-2">{% for t in metrics.top_ham_tokens %}<span class="chip chip-ham">{{ t }}</span>{% endfor %}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech stack -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-stack text-cyan"></i>Tech stack</h4>
+        <div class="d-flex flex-wrap gap-2">
+            {% for t in ["Python", "Flask", "scikit-learn", "pandas", "NumPy", "NLTK", "matplotlib", "seaborn", "WordCloud", "Plotly", "Chart.js", "Bootstrap 5"] %}
+            <span class="tech-chip">{{ t }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+</section>
+{% endblock %}

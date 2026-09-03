@@ -1,0 +1,112 @@
+{
+  "dataset": {
+    "total_raw": 5572,
+    "duplicates_removed": 414,
+    "total_unique": 5158,
+    "ham": 4516,
+    "spam": 642,
+    "spam_pct": 12.45,
+    "train_size": 4126,
+    "test_size": 1032,
+    "avg_len_ham": 71.0,
+    "avg_len_spam": 137.9
+  },
+  "vectorizer": {
+    "used_for_app": "tfidf",
+    "ngram_range": "(1, 2)",
+    "min_df": 2,
+    "max_features": 5000,
+    "vocab_size": 5000
+  },
+  "best_model": "Linear SVM",
+  "models": {
+    "Multinomial Naive Bayes": {
+      "accuracy": 0.9816,
+      "precision": 0.958,
+      "recall": 0.8906,
+      "f1": 0.9231,
+      "roc_auc": 0.993,
+      "train_time": 0.003
+    },
+    "Logistic Regression": {
+      "accuracy": 0.9855,
+      "precision": 1.0,
+      "recall": 0.8828,
+      "f1": 0.9378,
+      "roc_auc": 0.9987,
+      "train_time": 0.022
+    },
+    "Linear SVM": {
+      "accuracy": 0.9893,
+      "precision": 0.9835,
+      "recall": 0.9297,
+      "f1": 0.9558,
+      "roc_auc": 0.9979,
+      "train_time": 0.007
+    },
+    "Random Forest": {
+      "accuracy": 0.9864,
+      "precision": 0.9914,
+      "recall": 0.8984,
+      "f1": 0.9426,
+      "roc_auc": 0.9978,
+      "train_time": 1.277
+    }
+  },
+  "vectorizer_comparison": {
+    "tfidf": {
+      "Multinomial Naive Bayes": 0.9231,
+      "Logistic Regression": 0.9378,
+      "Linear SVM": 0.9558,
+      "Random Forest": 0.9426
+    },
+    "count": {
+      "Multinomial Naive Bayes": 0.9328,
+      "Logistic Regression": 0.9555,
+      "Linear SVM": 0.96,
+      "Random Forest": 0.9551
+    }
+  },
+  "top_spam_tokens": [
+    "phonenumbr",
+    "httpaddr",
+    "moneysymb",
+    "call phonenumbr",
+    "tone",
+    "mobil",
+    "rington",
+    "txt",
+    "servic",
+    "uk",
+    "repli",
+    "arsen",
+    "ltd",
+    "claim",
+    "emailaddr"
+  ],
+  "top_ham_tokens": [
+    "ring ur",
+    "got",
+    "numbr bedrm",
+    "sorri",
+    "later",
+    "ard",
+    "lt",
+    "yup",
+    "work",
+    "gt",
+    "person",
+    "lt gt",
+    "say",
+    "mail",
+    "told"
+  ],
+  "preprocessing_steps": [
+    "Lowercase the message",
+    "Swap URLs, emails, currency, phone numbers and digits for placeholder tokens",
+    "Strip the leftover punctuation",
+    "Split into word tokens",
+    "Drop English stopwords and single letters",
+    "Apply Porter stemming"
+  ]
+}

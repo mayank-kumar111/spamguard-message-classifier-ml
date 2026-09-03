@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Classify - SpamGuard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <div class="section-eyebrow">// live detection</div>
+        <h1 class="page-title">Message classifier</h1>
+        <p class="page-subtitle">Type a message and watch it get scanned in real time, or upload a CSV for bulk detection.</p>
+    </div>
+</section>
+
+<section class="container section-pad pt-3">
+    <ul class="nav nav-pills mb-4" id="predictTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single" type="button"><i class="bi bi-chat-text me-1"></i>Single message</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#batch" type="button"><i class="bi bi-filetype-csv me-1"></i>Batch (CSV)</button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- single message -->
+        <div class="tab-pane fade show active" id="single">
+            <div class="row g-4">
+                <!-- Input -->
+                <div class="col-lg-6">
+                    <div class="glass panel h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label for="messageInput" class="form-label mb-0">Message text</label>
+                            <span class="live-badge" id="liveBadge"><span class="d"></span>LIVE</span>
+                        </div>
+                        <textarea id="messageInput" class="form-control" rows="10" placeholder="Paste an email or SMS here... e.g. Congratulations! You've won a free prize, reply YES to claim."></textarea>
+                        <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+                            <span class="input-hint" id="charCount">0 chars · 0 words</span>
+                            <div class="ms-auto d-flex gap-2">
+                                <button class="btn btn-ghost btn-sm sample-btn" data-type="spam"><i class="bi bi-exclamation-octagon me-1"></i>Spam sample</button>
+                                <button class="btn btn-ghost btn-sm sample-btn" data-type="ham"><i class="bi bi-check-circle me-1"></i>Ham sample</button>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 mt-3">
+                            <button id="classifyBtn" class="btn btn-glow px-4"><i class="bi bi-search me-1"></i>Classify</button>
+                            <button id="clearBtn" class="btn btn-outline-secondary">Clear</button>
+                            <div class="form-check form-switch ms-auto d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" id="liveToggle" checked>
+                                <label class="form-check-label input-hint" for="liveToggle">Live mode</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result -->
+                <div class="col-lg-6">
+                    <div class="glass panel h-100" id="resultPanel">
+                        <div class="text-center">
+                            <div class="gauge-wrap">
+                                <svg viewBox="0 0 220 220" style="width:100%;height:100%;transform:rotate(0deg);">
+                                    <circle cx="110" cy="110" r="94" fill="none" stroke="rgba(148,163,184,.15)" stroke-width="16"></circle>
+                                    <circle id="gaugeArc" cx="110" cy="110" r="94" fill="none" stroke="#34d399" stroke-width="16"
+                                            stroke-linecap="round" transform="rotate(-90 110 110)"
+                                            stroke-dasharray="590.6" stroke-dashoffset="590.6" style="transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1), stroke .5s;"></circle>
+                                </svg>
+                                <div class="gauge-center">
+                                    <div class="gauge-pct" id="gaugePct">—</div>
+                                    <div class="gauge-label">spam probability</div>
+                                    <div class="gauge-verdict" id="gaugeVerdict">awaiting input</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="prob-split mt-4">
+                            <div class="prob-box">
+                                <div class="lbl text-ham">Ham</div>
+                                <div class="val text-ham" id="probHam">—</div>
+                            </div>
+                            <div class="prob-box">
+                                <div class="lbl text-spam">Spam</div>
+                                <div class="val text-spam" id="probSpam">—</div>
+                            </div>
+                        </div>
+
+                        <hr style="border-color:var(--border);">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="mb-0"><i class="bi bi-key me-1"></i>Trigger tokens</h6>
+                            <span class="input-hint">what drove the verdict</span>
+                        </div>
+                        <div id="topWords" class="d-flex flex-wrap gap-2">
+                            <span class="result-empty-state">Signal words will appear here as you type.</span>
+                        </div>
+                        <div id="resultNote" class="alert alert-warning small mt-3 mb-0 d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- batch upload -->
+        <div class="tab-pane fade" id="batch">
+            <div class="glass panel">
+                <h5 class="mb-3"><i class="bi bi-filetype-csv me-1"></i>Bulk CSV scan</h5>
+                <p class="chart-note">Upload a CSV with a <code>text</code> column (also detects <code>message</code>, <code>email</code>, <code>body</code>, <code>v2</code>). Up to 2,000 rows per scan.</p>
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-8"><input type="file" id="csvInput" class="form-control" accept=".csv"></div>
+                    <div class="col-md-4 d-grid"><button id="batchBtn" class="btn btn-glow"><i class="bi bi-upload me-1"></i>Scan file</button></div>
+                </div>
+
+                <div id="batchSummary" class="row g-3 mt-3 d-none">
+                    <div class="col-4"><div class="glass stat-card stat-sm"><div class="stat-value" id="bTotal">0</div><div class="stat-label">total</div></div></div>
+                    <div class="col-4"><div class="glass stat-card stat-sm"><div class="stat-value text-spam" id="bSpam">0</div><div class="stat-label">spam</div></div></div>
+                    <div class="col-4"><div class="glass stat-card stat-sm"><div class="stat-value text-ham" id="bHam">0</div><div class="stat-label">ham</div></div></div>
+                </div>
+                <div id="batchNote" class="alert alert-info small mt-3 d-none"></div>
+
+                <div id="batchResultWrap" class="d-none mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Results</h6>
+                        <button id="downloadBtn" class="btn btn-ghost btn-sm"><i class="bi bi-download me-1"></i>Export CSV</button>
+                    </div>
+                    <div class="batch-table-wrap">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead><tr><th style="width:58%;">Message</th><th>Verdict</th><th>P(spam)</th></tr></thead>
+                            <tbody id="batchTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- session analytics -->
+    <div class="glass analytics-card mt-4" id="sessionPanel">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+            <h4 class="chart-title mb-0"><i class="bi bi-activity text-cyan"></i>Session analytics</h4>
+            <div class="d-flex gap-2">
+                <button id="sessExport" class="btn btn-ghost btn-sm" disabled><i class="bi bi-download me-1"></i>Export</button>
+                <button id="sessClear" class="btn btn-outline-secondary btn-sm" disabled>Clear</button>
+            </div>
+        </div>
+        <p class="chart-note">
+            The same kind of breakdown as the Analytics page, but built live from what you classify here,
+            single scans and CSV files combined: class split, risk, message length and the top spam and ham
+            words in your own data. Live-typing previews aren't counted, only messages you submit. Resets on reload.
+        </p>
+
+        <div id="sessEmpty" class="result-empty-state text-center py-5">
+            <i class="bi bi-graph-up-arrow d-block mb-2" style="font-size:1.8rem;opacity:.5;"></i>
+            Classify a message or scan a CSV to start building session analytics.
+        </div>
+
+        <div id="sessBody" class="d-none">
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-lg"><div class="glass stat-card stat-sm"><div class="stat-value" id="sTotal">0</div><div class="stat-label">scanned</div></div></div>
+                <div class="col-6 col-lg"><div class="glass stat-card stat-sm"><div class="stat-value text-spam" id="sSpam">0</div><div class="stat-label">spam</div></div></div>
+                <div class="col-6 col-lg"><div class="glass stat-card stat-sm"><div class="stat-value text-ham" id="sHam">0</div><div class="stat-label">ham</div></div></div>
+                <div class="col-6 col-lg"><div class="glass stat-card stat-sm"><div class="stat-value" id="sAvgRisk">0%</div><div class="stat-label">avg risk</div></div></div>
+                <div class="col-6 col-lg"><div class="glass stat-card stat-sm"><div class="stat-value" id="sAvgLen">0</div><div class="stat-label">avg chars</div></div></div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h6 class="mono text-dim mb-2">// verdict split</h6>
+                    <div class="chart-holder" style="height:250px;"><canvas id="sessDonut"></canvas></div>
+                </div>
+                <div class="col-lg-8">
+                    <h6 class="mono text-dim mb-2">// risk distribution</h6>
+                    <div class="chart-holder" style="height:250px;"><canvas id="sessRisk"></canvas></div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-12">
+                    <h6 class="mono text-dim mb-2">// spam probability over time</h6>
+                    <div class="chart-holder" style="height:260px;"><canvas id="sessTimeline"></canvas></div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-12">
+                    <h6 class="mono text-dim mb-2">// message length distribution</h6>
+                    <div class="chart-holder" style="height:270px;"><canvas id="sessLength"></canvas></div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-lg-6">
+                    <h6 class="mono text-spam mb-2">// top spam words</h6>
+                    <div class="chart-holder" style="height:300px;"><canvas id="sessWordsSpam"></canvas></div>
+                </div>
+                <div class="col-lg-6">
+                    <h6 class="mono text-ham mb-2">// top ham words</h6>
+                    <div class="chart-holder" style="height:300px;"><canvas id="sessWordsHam"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

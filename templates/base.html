@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}SpamGuard - ML Threat Console{% endblock %}</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link href="{{ url_for('static', filename='css/style.css') }}?v=6" rel="stylesheet">
+
+    <!-- Set theme before paint to avoid flash -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('sg-theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        })();
+    </script>
+</head>
+
+<body>
+
+<canvas id="particles"></canvas>
+
+<!-- =========================
+     TOP BAR
+========================= -->
+
+<div class="top-bar">
+    <div class="container top-bar-inner">
+
+        <div class="tb-left">
+            <span class="tb-name">Mayank Kumar</span>
+            <span class="tb-role">Data Science | Machine Learning | AI/ML</span>
+        </div>
+
+        <div class="tb-right">
+
+            <a class="tb-item"
+               href="tel:+917258863011"
+               title="Call Mayank Kumar">
+                <i class="bi bi-telephone-fill"></i>
+                <span>+91-7258863011</span>
+            </a>
+
+            <a class="tb-ico li"
+               href="https://linkedin.com/in/mayank-kumar111"
+               target="_blank"
+               rel="noopener"
+               title="LinkedIn"
+               aria-label="LinkedIn">
+                <i class="bi bi-linkedin"></i>
+            </a>
+
+            <a class="tb-ico gh"
+               href="https://github.com/mayank-kumar111"
+               target="_blank"
+               rel="noopener"
+               title="GitHub"
+               aria-label="GitHub">
+                <i class="bi bi-github"></i>
+            </a>
+
+            <button
+                class="tb-ico copy dev-copy"
+                data-copy="+917258863011"
+                title="Copy phone number"
+                aria-label="Copy phone number">
+                <i class="bi bi-clipboard"></i>
+            </button>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- =========================
+     NAVIGATION
+========================= -->
+
+<nav class="navbar navbar-expand-lg app-navbar sticky-top">
+
+    <div class="container">
+
+        <a class="navbar-brand" href="{{ url_for('index') }}">
+            <span class="brand-dot"></span>
+            Spam<span class="text-cyan">Guard</span>
+        </a>
+
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navItems">
+
+            <span class="navbar-toggler-icon"></span>
+
+        </button>
+
+        <div class="collapse navbar-collapse" id="navItems">
+
+            <ul class="navbar-nav ms-auto align-items-lg-center">
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active=='home' }}"
+                       href="{{ url_for('index') }}">
+                        Home
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active=='predict' }}"
+                       href="{{ url_for('predict_page') }}">
+                        Predict
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active=='analytics' }}"
+                       href="{{ url_for('analytics_page') }}">
+                        Analytics
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active=='about' }}"
+                       href="{{ url_for('about_page') }}">
+                        About
+                    </a>
+                </li>
+
+                <li class="nav-item ms-lg-2 my-2 my-lg-0">
+
+                    <a class="btn btn-glow btn-sm px-3"
+                       href="{{ url_for('predict_page') }}">
+
+                        <i class="bi bi-magic me-1"></i>
+                        Try it
+
+                    </a>
+
+                </li>
+
+                <li class="nav-item ms-lg-2">
+
+                    <button
+                        class="theme-toggle"
+                        id="themeToggle"
+                        title="Toggle theme"
+                        aria-label="Toggle theme">
+
+                        <i class="bi bi-moon-stars"></i>
+
+                    </button>
+
+                </li>
+
+            </ul>
+
+        </div>
+    </div>
+
+</nav>
+
+
+<!-- =========================
+     MAIN CONTENT
+========================= -->
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+
+<!-- =========================
+     FOOTER
+========================= -->
+
+<footer class="app-footer">
+
+    <div class="container">
+
+        <div class="footer-grid">
+
+            <div class="footer-about">
+
+                <div class="brand">
+                    <span class="text-ham">&#9679;</span>
+                    SpamGuard
+                </div>
+
+                <p class="footer-desc">
+                    A machine-learning NLP classifier that detects
+                    spam and ham messages using TF-IDF feature extraction
+                    and supervised learning models.
+                </p>
+
+                <p class="footer-meta mono">
+
+                    Best model: {{ best_model }}
+                    &middot;
+
+                    {{ "{:,}".format(metrics.dataset.total_unique) }}
+                    messages
+
+                    &middot;
+
+                    {{ "%.1f"|format(metrics.models[best_model].accuracy * 100) }}%
+                    accuracy
+
+                </p>
+
+            </div>
+
+
+            <div class="footer-links">
+
+                <h6 class="footer-head">
+                    Explore
+                </h6>
+
+                <a href="{{ url_for('index') }}">
+                    Home
+                </a>
+
+                <a href="{{ url_for('predict_page') }}">
+                    Predict
+                </a>
+
+                <a href="{{ url_for('analytics_page') }}">
+                    Analytics
+                </a>
+
+                <a href="{{ url_for('about_page') }}">
+                    About
+                </a>
+
+            </div>
+
+
+            <div class="footer-links">
+
+                <h6 class="footer-head">
+                    Developer
+                </h6>
+
+                <a href="https://github.com/mayank-kumar111"
+                   target="_blank"
+                   rel="noopener">
+                    <i class="bi bi-github me-1"></i>
+                    GitHub
+                </a>
+
+                <a href="https://linkedin.com/in/mayank-kumar111"
+                   target="_blank"
+                   rel="noopener">
+                    <i class="bi bi-linkedin me-1"></i>
+                    LinkedIn
+                </a>
+
+                <a href="mailto:mayankkumaryan1@gmail.com">
+                    <i class="bi bi-envelope me-1"></i>
+                    Email
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <div class="footer-bottom">
+
+            <span>
+                &copy; 2026 Mayank Kumar. All rights reserved.
+            </span>
+
+            <span class="mono">
+                Built with Python, Flask, scikit-learn and Chart.js
+            </span>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+<!-- =========================
+     JAVASCRIPT
+========================= -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+
+<!-- Chart.js is served locally -->
+<script src="{{ url_for('static', filename='js/vendor/chart.umd.js') }}?v=6"></script>
+
+<script src="{{ url_for('static', filename='js/main.js') }}?v=6"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

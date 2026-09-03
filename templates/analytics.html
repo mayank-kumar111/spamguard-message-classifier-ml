@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Analytics - SpamGuard{% endblock %}
+
+{% block content %}
+<section class="page-header">
+    <div class="container">
+        <div class="section-eyebrow">// exploratory data analysis</div>
+        <h1 class="page-title">Threat analytics</h1>
+        <p class="page-subtitle">Live, interactive breakdown of the {{ "{:,}".format(metrics.dataset.total_unique) }}-message corpus and model evaluation.</p>
+    </div>
+</section>
+
+<section class="container section-pad pt-3">
+
+    <!-- Class distribution + stats -->
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-pie-chart-fill text-cyan"></i>Class distribution</h4>
+                <p class="chart-note">The corpus is imbalanced: legitimate mail dominates, as in a real inbox. That's why F1 (not accuracy) drives model selection.</p>
+                <div class="chart-holder" style="height:300px;"><canvas id="chartClass"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-clipboard-data text-cyan"></i>At a glance</h4>
+                <div class="mini-stat"><span>Ham messages</span><strong class="text-ham">{{ "{:,}".format(metrics.dataset.ham) }}</strong></div>
+                <div class="mini-stat"><span>Spam messages</span><strong class="text-spam">{{ "{:,}".format(metrics.dataset.spam) }}</strong></div>
+                <div class="mini-stat"><span>Spam share</span><strong>{{ metrics.dataset.spam_pct }}%</strong></div>
+                <div class="mini-stat"><span>Avg length · ham</span><strong>{{ metrics.dataset.avg_len_ham }} chars</strong></div>
+                <div class="mini-stat"><span>Avg length · spam</span><strong>{{ metrics.dataset.avg_len_spam }} chars</strong></div>
+                <div class="mini-stat"><span>Vocabulary size</span><strong>{{ "{:,}".format(metrics.vectorizer.vocab_size) }}</strong></div>
+                <div class="mini-stat"><span>Train / test split</span><strong>{{ "{:,}".format(metrics.dataset.train_size) }} / {{ "{:,}".format(metrics.dataset.test_size) }}</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Word clouds -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-cloud-fill text-cyan"></i>Word clouds</h4>
+        <p class="chart-note">Most frequent words per class. Spam screams urgency and rewards; ham is conversational.</p>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <h6 class="text-center text-spam mono mb-2">// SPAM</h6>
+                <div class="wordcloud-frame spam"><img src="{{ url_for('static', filename='images/wordcloud_spam.png') }}" alt="Spam word cloud"></div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-center text-ham mono mb-2">// HAM</h6>
+                <div class="wordcloud-frame ham"><img src="{{ url_for('static', filename='images/wordcloud_ham.png') }}" alt="Ham word cloud"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Frequent words -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-bar-chart-steps text-spam"></i>Top spam words</h4>
+                <div class="chart-holder" style="height:340px;"><canvas id="chartWordsSpam"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-bar-chart-steps text-ham"></i>Top ham words</h4>
+                <div class="chart-holder" style="height:340px;"><canvas id="chartWordsHam"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Length distribution -->
+    <div class="glass analytics-card reveal">
+        <h4 class="chart-title"><i class="bi bi-rulers text-cyan"></i>Message length distribution</h4>
+        <p class="chart-note">Spam packs in offers, links and calls-to-action, averaging {{ metrics.dataset.avg_len_spam }} characters vs {{ metrics.dataset.avg_len_ham }} for ham.</p>
+        <div class="chart-holder" style="height:340px;"><canvas id="chartLength"></canvas></div>
+    </div>
+
+    <!-- Model comparison -->
+    <div class="glass analytics-card reveal">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <h4 class="chart-title mb-0"><i class="bi bi-trophy-fill text-cyan"></i>Model comparison</h4>
+            <div class="btn-group btn-group-sm ms-auto" role="group" id="modelChartToggle">
+                <button class="btn btn-ghost active" data-mode="radar">Radar</button>
+                <button class="btn btn-ghost" data-mode="bar">Bars</button>
+            </div>
+        </div>
+        <p class="chart-note">Accuracy, precision, recall, F1 and ROC-AUC across all four models on the held-out test set. <strong class="text-ham">{{ best_model }}</strong> wins on F1.</p>
+        <div class="chart-holder" style="height:420px;"><canvas id="chartModels"></canvas></div>
+    </div>
+
+    <!-- Confusion + ROC -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-grid-3x3 text-cyan"></i>Confusion matrix</h4>
+                <p class="chart-note">Test-set predictions for {{ best_model }}. Hover a cell for detail.</p>
+                <div class="cm-grid mt-4">
+                    <div class="cm-axis"></div>
+                    <div class="cm-axis">Pred · Ham</div>
+                    <div class="cm-axis">Pred · Spam</div>
+                    <div class="cm-axis" style="writing-mode:vertical-rl;transform:rotate(180deg);">Actual · Ham</div>
+                    <div class="cm-cell cm-tn" title="True negatives: ham correctly kept"><div class="n text-cyan">{{ "{:,}".format(chart.confusion.tn) }}</div><div class="t">true negative</div></div>
+                    <div class="cm-cell cm-fp" title="False positives: ham wrongly flagged as spam"><div class="n" style="color:var(--amber);">{{ chart.confusion.fp }}</div><div class="t">false positive</div></div>
+                    <div class="cm-axis" style="writing-mode:vertical-rl;transform:rotate(180deg);">Actual · Spam</div>
+                    <div class="cm-cell cm-fn" title="False negatives: spam that slipped through"><div class="n text-spam">{{ chart.confusion.fn }}</div><div class="t">false negative</div></div>
+                    <div class="cm-cell cm-tp" title="True positives: spam correctly caught"><div class="n text-ham">{{ chart.confusion.tp }}</div><div class="t">true positive</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="glass analytics-card h-100 reveal">
+                <h4 class="chart-title"><i class="bi bi-activity text-cyan"></i>ROC curves</h4>
+                <p class="chart-note">True-positive vs false-positive rate. Closer to the top-left (higher AUC) is better.</p>
+                <div class="chart-holder" style="height:360px;"><canvas id="chartRoc"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<script id="chart-data" type="application/json">{{ chart|tojson }}</script>
+<script id="metrics-data" type="application/json">{{ metrics|tojson }}</script>
+{% endblock %}
