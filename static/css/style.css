@@ -843,3 +843,41 @@ textarea.form-control { resize: vertical; }
     cursor: pointer;
     user-select: none;
 }
+
+
+/* ---------- Prediction tabs: harden active state in light mode ---------- */
+/* Explicitly define the selected tab so Bootstrap/theme overrides cannot
+   turn the active tab into white text on a white background. */
+#predictTabs .nav-link.active,
+#predictTabs .nav-link.active:hover,
+#predictTabs .nav-link.active:focus,
+[data-theme="light"] #predictTabs .nav-link.active,
+[data-theme="light"] #predictTabs .nav-link.active:hover,
+[data-theme="light"] #predictTabs .nav-link.active:focus {
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #0891b2 0%, #2563eb 52%, #7c3aed 100%) !important;
+    background-color: #2563eb !important;
+    border: 1px solid transparent !important;
+    opacity: 1 !important;
+    text-shadow: none !important;
+    -webkit-text-fill-color: #ffffff !important;
+    box-shadow: 0 10px 22px rgba(37, 99, 235, .18);
+}
+
+#predictTabs .nav-link.active i,
+[data-theme="light"] #predictTabs .nav-link.active i {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+#predictTabs .nav-link:not(.active) {
+    color: #64748b;
+    background: #ffffff;
+    opacity: 1;
+}
+
+[data-theme="dark"] #predictTabs .nav-link:not(.active) {
+    color: var(--text-dim);
+    background: var(--surface-2);
+}
