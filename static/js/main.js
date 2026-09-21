@@ -144,7 +144,7 @@
     function themeIcon() {
         const t = document.documentElement.getAttribute("data-theme");
         if (themeToggle) themeToggle.innerHTML = t === "dark"
-            ? '<i class="bi bi-moon-stars"></i>' : '<i class="bi bi-sun"></i>';
+            ? '<i class="bi bi-sun"></i>' : '<i class="bi bi-moon-stars"></i>';
     }
     themeIcon();
     if (themeToggle) {
