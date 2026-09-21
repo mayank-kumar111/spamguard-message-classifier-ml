@@ -1368,3 +1368,121 @@ ROC-AUC    0.9979
 - `spam.csv` — included training dataset
 - `models/metrics.json` — recorded evaluation metrics
 - `models/chart_data.json` — chart-ready analytics data
+
+
+---
+
+## 39. UI / UX Refresh
+
+The application UI was refreshed without changing the machine-learning or API functionality.
+
+### Theme behavior
+
+- **Light theme is now the default.**
+- Dark theme remains available through the existing theme toggle.
+- The selected theme is stored in browser `localStorage` under `sg-theme`.
+- Theme is applied before the page paints to reduce theme flashing.
+- Charts listen for the existing `sg-theme` event and redraw using the current theme colors.
+
+### Prediction interface improvements
+
+The prediction page retains both existing workflows:
+
+- Single message classification
+- Batch CSV classification
+
+The following UI issues were addressed:
+
+1. The **Single message** active tab could become white/invisible in light mode.
+   - The active state now has an explicit high-contrast cyan/blue/purple gradient.
+   - Icon and text remain white and visible.
+
+2. The **Live mode** switch could disappear against the light background.
+   - The switch now has an explicit track and thumb style.
+   - ON/OFF states have separate high-contrast colors.
+   - Keyboard focus and hover states are visible.
+   - The same control remains functional in dark mode.
+
+3. Bootstrap alert components were given explicit light-theme colors for:
+   - warnings
+   - information messages
+   - errors
+
+4. CSV file inputs were styled for the light theme so the filename and file-selector button remain readable.
+
+5. Analytics **Radar/Bars** toggle buttons now have a clear selected state in light mode.
+
+### Responsive behavior
+
+The navigation and prediction interface were hardened for smaller screens:
+
+- Collapsed navigation receives a readable card-style container.
+- Navigation links remain touch-friendly.
+- Prediction tabs expand to balanced full-width controls on small screens.
+- The Live mode control wraps cleanly instead of being squeezed beside buttons.
+- Batch-result tables can scroll horizontally on narrow screens.
+- Long navigation/footer labels are prevented from breaking awkwardly.
+
+### Asset cache versioning
+
+The main stylesheet and JavaScript assets use version query parameters so browsers are less likely to retain stale UI assets after deployment.
+
+---
+
+## 40. UI Maintenance Guidelines
+
+When adding new UI components:
+
+1. Define the component using the existing CSS variables such as `--text`, `--muted`, `--surface`, `--border`, `--cyan`, `--ham`, and `--spam`.
+2. Add explicit light-theme rules when a component depends on Bootstrap's default colors.
+3. Ensure active/selected states have sufficient contrast in both themes.
+4. Do not modify prediction/API IDs such as `liveToggle`, `classifyBtn`, `messageInput`, `batchBtn`, or API routes without updating the corresponding JavaScript.
+5. Test both `data-theme="light"` and `data-theme="dark"`.
+6. Test the prediction page at desktop and mobile widths.
+7. Bump the static asset version when a browser-cache-sensitive UI change is deployed.
+
+---
+
+## 41. Recent UI Fix Log
+
+| Area | Issue | Resolution |
+|---|---|---|
+| Theme | Light mode was not the HTML fallback | Light is now the default fallback |
+| Prediction tabs | Active Single message tab could disappear in light mode | Added explicit high-contrast active state |
+| Live mode | Switch track/thumb was difficult to see in light mode | Added explicit accessible switch styling |
+| Alerts | Bootstrap alert colors could have poor light-theme contrast | Added light-theme warning/info/error colors |
+| CSV upload | File input styling could be difficult to read | Added light-theme file-selector styling |
+| Analytics toggle | Radar/Bars selected state could be ambiguous | Added explicit selected-state styling |
+| Mobile navigation | Collapsed menu could blend into page | Added bordered/raised mobile menu |
+| Mobile prediction | Controls could become cramped | Added responsive tab and switch layout |
+| Batch table | Narrow screens could clip results | Added horizontal overflow handling |
+| Browser cache | Updated CSS/JS could remain stale | Refreshed asset version parameters |
+
+> These changes are presentation-layer changes. The existing model artifacts, preprocessing pipeline, prediction endpoints, batch processing, session analytics, and chart logic remain part of the application.
+
+---
+
+## 42. Current UI Validation Checklist
+
+Before considering a UI change complete, verify:
+
+- [x] Light theme loads by default.
+- [x] Dark theme remains available.
+- [x] Theme preference persists after reload.
+- [x] Home page remains readable in both themes.
+- [x] Predict page remains readable in both themes.
+- [x] Single message tab is visible when selected.
+- [x] Batch CSV tab remains visible and selectable.
+- [x] Live mode switch is visible in both ON and OFF states.
+- [x] Classify and Clear controls remain visible.
+- [x] Probability cards retain Ham/Spam contrast.
+- [x] Trigger-token area remains readable.
+- [x] Batch CSV input remains readable.
+- [x] Batch result table remains readable.
+- [x] Session analytics controls remain usable.
+- [x] Analytics Radar/Bars toggle has a visible selected state.
+- [x] Analytics charts can redraw after theme changes.
+- [x] Navigation remains usable on smaller screens.
+- [x] Long tables can scroll on narrow screens.
+- [x] Existing routes and API IDs remain unchanged.
+
